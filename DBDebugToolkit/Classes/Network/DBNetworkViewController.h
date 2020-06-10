@@ -27,7 +27,7 @@
  `DBNetworkViewController` is a view controller displaying the list of logged requests with a search bar.
  It has one button on the navigation bar, that opens a `DBNetworkSettingsTableViewController`.
  */
-@interface DBNetworkViewController : UIViewController
+@interface DBNetworkViewController : UITableViewController
 
 /**
  `DBNetworkToolkit` object providing the list of logged requests and informing about any changes.

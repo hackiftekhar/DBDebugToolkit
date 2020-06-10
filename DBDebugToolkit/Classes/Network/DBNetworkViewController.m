@@ -29,10 +29,9 @@
 
 static NSString *const DBNetworkViewControllerRequestCellIdentifier = @"DBRequestTableViewCell";
 
-@interface DBNetworkViewController () <UITableViewDataSource, UITableViewDelegate, UISearchBarDelegate, DBNetworkToolkitDelegate, DBRequestDetailsViewControllerDelegate>
+@interface DBNetworkViewController () <UITableViewDataSource, UITableViewDelegate, UISearchResultsUpdating, UISearchControllerDelegate, DBNetworkToolkitDelegate, DBRequestDetailsViewControllerDelegate>
 
-@property (nonatomic, weak) IBOutlet UISearchBar *searchBar;
-@property (nonatomic, weak) IBOutlet UITableView *tableView;
+@property (nonatomic, strong) UISearchController *searchController;
 @property (nonatomic, weak) IBOutlet UILabel *loggingRequestsDisabledLabel;
 @property (nonatomic, strong) NSArray *filteredRequests;
 @property (nonatomic, strong) DBRequestDetailsViewController *requestDetailsViewController;
@@ -45,11 +44,17 @@ static NSString *const DBNetworkViewControllerRequestCellIdentifier = @"DBReques
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.searchBar.delegate = self;
+    
+    self.searchController = [[UISearchController alloc] initWithSearchResultsController:nil];
+    self.searchController.searchResultsUpdater = self;
+    self.searchController.obscuresBackgroundDuringPresentation = NO;
+    self.searchController.searchBar.placeholder = @"Search";
+
+    self.navigationItem.searchController = self.searchController;
+    self.definesPresentationContext = YES;
+    
     self.networkToolkit.delegate = self;
     self.filteredRequests = self.networkToolkit.savedRequests;
-    self.tableView.delegate = self;
-    self.tableView.dataSource = self;
     NSBundle *bundle = [NSBundle debugToolkitBundle];
     [self.tableView registerNib:[UINib nibWithNibName:@"DBRequestTableViewCell" bundle:bundle]
          forCellReuseIdentifier:DBNetworkViewControllerRequestCellIdentifier];
@@ -84,7 +89,7 @@ static NSString *const DBNetworkViewControllerRequestCellIdentifier = @"DBReques
 #pragma mark - Configuring View
 
 - (void)updateRequests {
-    NSString *searchBarText = self.searchBar.text;
+    NSString *searchBarText = self.searchController.searchBar.text;
     if (searchBarText.length > 0) {
         NSPredicate *predicate = [NSPredicate predicateWithFormat:@"(SELF.url.relativePath contains[cd] %@) OR (SELF.url.host contains[cd] %@)", searchBarText, searchBarText];
         self.filteredRequests = [self.networkToolkit.savedRequests filteredArrayUsingPredicate:predicate];
@@ -104,7 +109,7 @@ static NSString *const DBNetworkViewControllerRequestCellIdentifier = @"DBReques
 
 - (void)configureViewWithLoggingRequestsEnabled:(BOOL)enabled {
     self.tableView.alpha = enabled ? 1.0 : 0.0;
-    self.searchBar.alpha = enabled ? 1.0 : 0.0;
+    self.searchController.searchBar.alpha = enabled ? 1.0 : 0.0;
     self.loggingRequestsDisabledLabel.alpha = enabled ? 0.0 : 1.0;
 }
 
@@ -175,22 +180,17 @@ static NSString *const DBNetworkViewControllerRequestCellIdentifier = @"DBReques
 
 #pragma mark - UISearchBarDelegate
 
-- (void)searchBarTextDidBeginEditing:(UISearchBar *)searchBar {
-    [searchBar setShowsCancelButton:YES animated:YES];
-}
-
-- (void)searchBar:(UISearchBar *)searchBar textDidChange:(NSString *)searchText {
+- (void)updateSearchResultsForSearchController:(UISearchController *)searchController {
     [self reloadData];
 }
 
-- (void)searchBarCancelButtonClicked:(UISearchBar *)searchBar {
-    if (searchBar.text.length > 0) {
-        [searchBar setText:@""];
-        [self reloadData];
-    }
-    [searchBar setShowsCancelButton:NO animated:YES];
-    [searchBar resignFirstResponder];
-}
+//- (void)willPresentSearchController:(UISearchController *)searchController;
+//- (void)didPresentSearchController:(UISearchController *)searchController;
+//- (void)willDismissSearchController:(UISearchController *)searchController;
+//- (void)didDismissSearchController:(UISearchController *)searchController;
+//
+//// Called after the search controller's search bar has agreed to begin editing or when 'active' is set to YES. If you choose not to present the controller yourself or do not implement this method, a default presentation is performed on your behalf.
+//- (void)presentSearchController:(UISearchController *)searchController;
 
 #pragma mark - DBNetworkToolkitDelegate
 
